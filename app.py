@@ -22,7 +22,7 @@ connection.autocommit = True
 def hello_world():
     return "<p>Hello, World!</p>"
 
-@app.route("/strains", methods=['GET'])
+@app.get("/strains")
 def get_strains():
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM strains")
@@ -44,7 +44,8 @@ def get_experiments_for_strain(strain_id):
         experiments = cursor.fetchall()
     return experiments
 
-@app.route("/strains/create", methods=['POST'])
+
+@app.post("/strains/create")
 def create_strain():
     data = request.json
     name = data['name']
@@ -54,7 +55,7 @@ def create_strain():
         new_id = cursor.fetchone()['id']
     return jsonify({"id": new_id, "name": name, "creation_date": creation_date})
 
-@app.route("/strains/update/<int:strain_id>", methods=['PUT'])
+@app.put("/strains/update/<int:strain_id>")
 def update_strain(strain_id):
     data = request.json
     name = data['name']
@@ -63,7 +64,7 @@ def update_strain(strain_id):
         cursor.execute("UPDATE strains SET name = %s, creation_date = %s WHERE id = %s", (name, creation_date, strain_id))
     return '', 204
 
-@app.route("/strains/delete/<int:strain_id>", methods=['DELETE'])
+@app.delete("/strains/delete/<int:strain_id>")
 def delete_strain(strain_id):
     with connection.cursor() as cursor:
         cursor.execute("DELETE FROM strains WHERE id = %s", (strain_id,))

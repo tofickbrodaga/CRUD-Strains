@@ -1,10 +1,10 @@
-version: '3.8'
+version: '3.11.5'
 services:
   postgres:
     image: 'postgres:15.5'
     env_file: .env
     ports:
-      - ${POSTGRES_PORT}:5432
+      - ${POSTGRES_PORT}:6465
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
       interval: 1s
