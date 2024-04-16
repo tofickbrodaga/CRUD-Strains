@@ -48,12 +48,12 @@ def get_experiments_for_strain(strain_id):
 @app.post("/strains/create")
 def create_strain():
     data = request.json
-    name = data['name']
+    name = data['strain_name']
     creation_date = data['creation_date']
     with connection.cursor() as cursor:
-        cursor.execute("INSERT INTO strains (name, creation_date) VALUES (%s, %s) RETURNING id", (name, creation_date))
+        cursor.execute("INSERT INTO strains (strain_name, creation_date) VALUES (%s, %s) RETURNING id", (name, creation_date))
         new_id = cursor.fetchone()['id']
-    return jsonify({"id": new_id, "name": name, "creation_date": creation_date})
+    return jsonify({"id": new_id, "strain_name": name, "creation_date": creation_date})
 
 @app.put("/strains/update/<int:strain_id>")
 def update_strain(strain_id):
@@ -61,7 +61,7 @@ def update_strain(strain_id):
     name = data['name']
     creation_date = data['creation_date']
     with connection.cursor() as cursor:
-        cursor.execute("UPDATE strains SET name = %s, creation_date = %s WHERE id = %s", (name, creation_date, strain_id))
+        cursor.execute("UPDATE strains SET strain_name = %s, creation_date = %s WHERE id = %s", (name, creation_date, strain_id))
     return '', 204
 
 @app.delete("/strains/delete/<int:strain_id>")
