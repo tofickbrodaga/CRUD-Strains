@@ -17,8 +17,8 @@
 
 ## Данные для заполнения БД:
 
-Table Users
-''' 
+Users
+```
 INSERT INTO users (login, lastname, firstname)
 VALUES
     ('user1', 'Doe', 'John'),
@@ -28,9 +28,9 @@ VALUES
     ('user5', 'Brown', 'Michael'),
      ('user6', 'Jones', 'Emma'),
     ('user7', 'Garcia', 'Daniel');
-'''
-Table Strains
-'''
+```
+Strains
+```
 INSERT INTO strains (strain_name, creation_date)
 VALUES
     ('Strain_A', '2023-01-15'),
@@ -40,11 +40,11 @@ VALUES
     ('Strain_E', '2023-05-15'),
     ('Strain_F', '2023-06-20'),
     ('Strain_G', '2023-07-25');
-'''
-Table User to Strains
-'''
+```
+User to Strains
+```
 INSERT INTO user_strains (user_id, strain_id)
 SELECT u.id, s.id
 FROM users u
 CROSS JOIN strains s;
-'''
+```
