@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2.sql import SQL, Literal
 from dotenv import load_dotenv
 import os
 
@@ -9,7 +10,7 @@ load_dotenv()
 app = Flask(__name__)
 
 connection = psycopg2.connect(
-    host='localhost',
+    host=os.getenv('POSTGRES_HOST'),
     port=os.getenv('POSTGRES_PORT'),
     database=os.getenv('POSTGRES_DB'),
     user=os.getenv('POSTGRES_USER'),
@@ -24,65 +25,70 @@ def hello_world():
     return '<p>Welcome to the site with experiments!</p>'
 
 
-def get_users_for_strain(strain_id):
+@app.get('/strains')
+def get_strains():
+    query = """
+    WITH strains_with_users AS (
+        SELECT s.*, json_agg(u.*) AS users
+        FROM strains s
+        LEFT JOIN user_strains us ON s.id = us.strain_id
+        LEFT JOIN users u ON us.user_id = u.id
+        GROUP BY s.id
+    )
+    SELECT jsonb_build_object(
+               'id', id,
+               'strain_name', strain_name,
+               'users', users
+           ) AS strain
+    FROM strains_with_users;
+    """
+
     with connection.cursor() as cursor:
-        cursor.execute('SELECT * FROM user_strains WHERE strain_id = (select id from strains where strain_name = %s)', (strain_id,))
-        users = cursor.fetchall()
-    return users
+        cursor.execute(query)
+        strains = cursor.fetchall()
+
+    return jsonify(strains)
 
 
-def get_experiments_for_strain(strain_id):
-    with connection.cursor() as cursor:
-        cursor.execute('SELECT id, start_date, end_date, growth_environment, results FROM experiments WHERE strain_name = %s', (strain_id,))
-        experiments = cursor.fetchall()
-        return experiments
-
-
-@app.get('/experiments')
-def get_experiments():
-    with connection.cursor() as cursor:
-        cursor.execute('SELECT * FROM experiments')
-        experiments = cursor.fetchall()
-        for experiment in experiments:
-            strain_name = experiment['strain_name']
-            experiment['users'] = get_users_for_strain(strain_name)
-            experiment['start_date'] = experiment['start_date'].isoformat()
-            experiment['end_date'] = experiment['end_date'].isoformat()
-            experiment['experiments'] = get_experiments_for_strain(strain_name)
-    return jsonify(experiments)
-
-
-@app.post('/experiments/create')
-def create_experiment():
-    data = request.json
-    strain_id = data['strain_name']
-    start_date = data['start_date']
-    end_date = data['end_date']
-    growthenvironment = data['growth_environment']
-    results = data['results']
-    with connection.cursor() as cursor:
-        cursor.execute('INSERT INTO experiments (strain_name, start_date, end_date, growth_environment, results) VALUES (%s, %s, %s, %s, %s) RETURNING id', (strain_id, start_date, end_date, growthenvironment, results))
-        new_id = cursor.fetchone()['id']
-    return jsonify({'id': new_id, 'strain_id': strain_id, 'start_date': start_date, 'end_date': end_date, 'growth_environment': growthenvironment, 'results': results})
-
-
-@app.put('/experiments/update/<id>')
-def update_experiment(id):
+@app.post('/strains/create')
+def create_strain():
     data = request.json
     strain_name = data['strain_name']
-    start_date = data['start_date']
-    end_date = data['end_date']
-    growthenvironment = data['growth_environment']
-    results = data['results']
+
+    query = SQL("""
+        INSERT INTO strains (strain_name)
+        VALUES ({strain_name})
+        RETURNING id
+    """).format(strain_name=Literal(strain_name))
+
     with connection.cursor() as cursor:
-        cursor.execute('UPDATE experiments SET strain_name = %s, start_date = %s, end_date = %s, growth_environment = %s, results = %s WHERE id = %s', (strain_name, start_date, end_date, growthenvironment, results, id))
+        cursor.execute(query)
+        new_id = cursor.fetchone()['id']
+
+    return jsonify({'id': new_id, 'strain_name': strain_name})
+
+
+@app.put('/strains/update/<strain_name>')
+def update_strain(strain_name):
+    data = request.json
+    new_creation_date = data['creation_date']
+
+    query = SQL("""
+        UPDATE strains
+        SET creation_date = {new_creation_date}
+        WHERE strain_name = {strain_name}
+    """).format(new_creation_date=Literal(new_creation_date), strain_name=Literal(strain_name))
+
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+
     return '', 204
 
 
-@app.delete('/experiments/delete/<id>')
-def delete_experiment(id):
+@app.delete('/strains/delete/<strain_name>')
+def delete_strain(strain_name):
     with connection.cursor() as cursor:
-        cursor.execute('DELETE FROM experiments WHERE id = %s', (id,))
+        cursor.execute('DELETE FROM strains WHERE strain_name = %s', (strain_name,))
     return '', 204
 
 
