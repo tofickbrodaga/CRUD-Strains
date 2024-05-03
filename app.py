@@ -22,7 +22,7 @@ connection.autocommit = True
 
 @app.get('/')
 def hello_world():
-    return '<p>Welcome to the site with experiments!</p>'
+    return '<p>Welcome to the site with strains!</p>'
 
 
 @app.get('/strains')
@@ -35,11 +35,7 @@ def get_strains():
         LEFT JOIN users u ON us.user_id = u.id
         GROUP BY s.id
     )
-    SELECT jsonb_build_object(
-               'id', id,
-               'strain_name', strain_name,
-               'users', users
-           ) AS strain
+    SELECT id, strain_name, users
     FROM strains_with_users;
     """
 
