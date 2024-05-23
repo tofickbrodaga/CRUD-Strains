@@ -1,35 +1,37 @@
 -- migrate:up
 create extension if not exists "uuid-ossp";
 
-CREATE TABLE users (
+create schema strains_exp;
+
+CREATE TABLE strains_exp.users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     login VARCHAR(50) UNIQUE,
     lastname VARCHAR(50),
     firstname VARCHAR(50)
 );
 
-CREATE TABLE strains (
+CREATE TABLE strains_exp.strains (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     strain_name TEXT UNIQUE,
     creation_date DATE
 );
 
-CREATE TABLE user_strains (
-    user_id UUID REFERENCES users(id),
-    strain_id UUID REFERENCES strains(id),
+CREATE TABLE strains_exp.user_strains (
+    user_id UUID REFERENCES strains_exp.users(id),
+    strain_id UUID REFERENCES strains_exp.strains(id),
     PRIMARY KEY (user_id, strain_id)
 );
 
-CREATE TABLE experiments (
+CREATE TABLE strains_exp.experiments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    strain_name TEXT REFERENCES strains(strain_name),
+    strain_name TEXT REFERENCES strains_exp.strains(strain_name),
     start_date DATE,
     end_date DATE,
     growth_environment VARCHAR(50),
     results TEXT
 );
 
-INSERT INTO users (login, lastname, firstname)
+INSERT INTO strains_exp.users (login, lastname, firstname)
 VALUES
     ('user1', 'Doe', 'John'),
     ('user2', 'Smith', 'Alice'),
@@ -39,7 +41,7 @@ VALUES
      ('user6', 'Jones', 'Emma'),
     ('user7', 'Garcia', 'Daniel');
 
-INSERT INTO strains (strain_name, creation_date)
+INSERT INTO strains_exp.strains (strain_name, creation_date)
 VALUES
     ('Strain_A', '2023-01-15'),
     ('Strain_B', '2023-02-20'),
@@ -49,28 +51,27 @@ VALUES
     ('Strain_F', '2023-06-20'),
     ('Strain_G', '2023-07-25');
 
-INSERT INTO user_strains (user_id, strain_id)
+INSERT INTO strains_exp.user_strains (user_id, strain_id)
 SELECT u.id, s.id
-FROM users u
-CROSS JOIN strains s
+FROM strains_exp.users u
+CROSS JOIN strains_exp.strains s
 WHERE u.lastname = 'Doe'
 AND s.strain_name IN ('Strain_A', 'Strain_B');
 
 
-INSERT INTO user_strains (user_id, strain_id)
+INSERT INTO strains_exp.user_strains (user_id, strain_id)
 SELECT u.id, s.id
-FROM users u
-JOIN strains s
+FROM strains_exp.users u
+JOIN strains_exp.strains s
 ON s.strain_name = 'Strain_G'
 WHERE u.lastname = 'Johnson';
 
 
-INSERT INTO user_strains (user_id, strain_id)
+INSERT INTO strains_exp.user_strains (user_id, strain_id)
 SELECT u.id, s.id
-FROM users u
-JOIN strains s
+FROM strains_exp.users u
+JOIN strains_exp.strains s
 ON s.strain_name = 'Strain_F'
 WHERE u.lastname = 'Garcia';
 
 -- migrate:down
-
